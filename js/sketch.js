@@ -9,14 +9,7 @@ let lineHistory = []
 
 function setup() {
   createCanvas(400, 500);
-
-
   lineHistory.push(welcomeText())
-
-  // config
-  textSize(15)
-  textFont(pixelFont)
-
 }
 
 
@@ -26,8 +19,11 @@ function calculateLines(text, maxWidth) {
   let currentLine = ''
 
 
-
   for (let word of words) {
+    if (word.length === 0) {
+      continue
+    }
+    
     let testLine = ''
     if (currentLine.length > 0) {
       testLine = currentLine + ' ' + word
@@ -43,7 +39,7 @@ function calculateLines(text, maxWidth) {
     }
   }
 
-  // console.log(lines)
+  console.log(lines)
   return lines
 }
 
@@ -153,14 +149,14 @@ function draw() {
   drawTextDisplay()
 
   // for designing the interface and debugging
-  strokeWeight(1)
-  fill(255)
+  // strokeWeight(1)
   // text(`${mouseX}, ${mouseY}`, 320, 25)
-
-  strokeWeight(1)
-
+  
   // input
+  noStroke()
+  fill(255)
   textSize(15)
+  textFont(pixelFont)
   text(inputBuffer, 15, 470)
   rect(textWidth(inputBuffer) + 15, 470, 6, 1) // cursor
 
