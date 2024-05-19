@@ -23,7 +23,7 @@ function calculateLines(text, maxWidth) {
     if (word.length === 0) {
       continue
     }
-    
+
     let testLine = ''
     if (currentLine.length > 0) {
       testLine = currentLine + ' ' + word
@@ -39,7 +39,8 @@ function calculateLines(text, maxWidth) {
     }
   }
 
-  console.log(lines)
+  // debug
+  // console.log(lines)
   return lines
 }
 
@@ -172,7 +173,7 @@ function draw() {
 
 function keyPressed() {
   if (keyCode === ENTER) {
-    output = handleInput()
+    output = handleInput(inputBuffer)
 
     // push input and output to the history display
     lineHistory.push(inputBuffer)
@@ -265,6 +266,17 @@ gameLogic = {
  * Magical function. Entry point of the game. Simply take the input and return some output. DO NOT USE p5js FUNCTIONS.
  */
 function handleInput(input) {
+  console.log(input)
 
-  return 'A default response here'
+  if (input.length === 0) {
+    return 'No Command given.'
+  }
+
+  // input processing
+  action = input.split(' ', 1)[0]
+  object = input.split(' ').slice(1).join(' ')
+
+
+
+  return 'Invalid Action.'
 }
