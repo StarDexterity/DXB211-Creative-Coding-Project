@@ -6,10 +6,15 @@ function preload() {
 let inputBuffer = ''
 let lineHistory = []
 
+// Textbox graphics buffer
+let tb
 
 function setup() {
   createCanvas(400, 500);
   lineHistory.push(welcomeText())
+
+  // create offscreen buffer for textbox
+  tb = createGraphics(textbox.width, textbox.height)
 }
 
 
@@ -81,13 +86,12 @@ textbox.maxTextWidth = textbox.width - textbox.sb.width - 5
 
 
 function drawTextDisplay() {
-  // create offscreen buffer
-  tb = createGraphics(textbox.width, textbox.height)
+  // clear buffer
+  tb.background(0)
 
   // config
   tb.textAlign(LEFT, TOP)
   tb.fill(0)
-  tb.background(0)
   tb.textFont(pixelFont)
   tb.textSize(textbox.textSize)
   tb.textLeading(textbox.textLeading)
