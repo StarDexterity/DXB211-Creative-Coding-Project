@@ -9,13 +9,7 @@ let lineHistory = []
 // Textbox graphics buffer
 let tb
 
-function setup() {
-  createCanvas(400, 500);
-  lineHistory.push(welcomeText())
 
-  // create offscreen buffer for textbox
-  tb = createGraphics(textbox.width, textbox.height)
-}
 
 
 function calculateLines(text, maxWidth) {
@@ -44,6 +38,13 @@ function calculateLines(text, maxWidth) {
     }
   }
 
+  // count line breaks
+  for (let l of text) {
+    if (l == '\n') {
+      lines += 1
+    }
+  }
+
   // debug
   // console.log(lines)
   return lines
@@ -65,21 +66,23 @@ function calculateTextboxHeight(lines, maxWidth) {
 
 // textbox element
 let textbox = {
-  x: 10,
-  y: 10,
-  textSize: 15,
+  x: 10, // x offset of textbox in main canvas
+  y: 10, // y offset of textbox in main canvas
+  textSize: 15, // Font size of text
   maxTextWidth: 0, // calculated below
-  width: 380,
-  height: 425,
-  textLeading: 18,
-  blockSpacing: 0,
+  width: 380, // static width of textbox
+  height: 425, // static height of textbox
+  textLeading: 18, // spacing between successive text lines
+  blockSpacing: 10, // spacing between blocks (blocks are defined as strings in the lineHistory array)
   sb: { // scrollbar
     y: 0, // calculated y position of the scrollbar. Starts at zero. 
     offsetY: 0, // calculated y offset of the mouse from the top of the scrollbar
     width: 15,
     height: 0,
     dragging: false,
-    fill: '#81D4FA'
+    fill: '#6BCBE7', // colour of scrollbar handle
+    backbar: true, // is there a coloured backbar
+    backbarFill: '#356D7D' // colour of backbar
   }
 }
 textbox.maxTextWidth = textbox.width - textbox.sb.width - 5
@@ -137,6 +140,13 @@ function drawTextDisplay() {
   // scrollbar height is the shown portion of text multiplied by the texbox height
   textbox.sb.height = shownPortion * tb.height
 
+  tb.fill(textbox.sb.backbarFill)
+  tb.rect(textbox.width - textbox.sb.width,
+            0,
+            textbox.sb.width,
+            textbox.height
+  )
+
   tb.noStroke()
   tb.fill(textbox.sb.fill)
   tb.rect(textbox.width - textbox.sb.width, textbox.sb.y, textbox.sb.width, textbox.sb.height)
@@ -146,6 +156,13 @@ function drawTextDisplay() {
   image(tb, textbox.x, textbox.y, textbox.width, textbox.height)
 }
 
+function setup() {
+  createCanvas(400, 500);
+  setupGame()
+
+  // create offscreen buffer for textbox
+  tb = createGraphics(textbox.width, textbox.height)
+}
 
 function draw() {
   background(0);
@@ -179,9 +196,15 @@ function keyPressed() {
   if (keyCode === ENTER) {
     output = handleInput(inputBuffer)
 
-    // push input and output to the history display
-    lineHistory.push(inputBuffer)
-    lineHistory.push(output)
+
+    if (output === 'reset') {
+      setupGame()
+    } else {
+      // push input and output to the history display
+      lineHistory.push(inputBuffer)
+      lineHistory.push(output)
+    }
+    
 
     // clear input buffer
     inputBuffer = ''
@@ -257,7 +280,24 @@ function mouseReleased() {
 
 
 function welcomeText() {
-  return `AAAAAAAAAAAAAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA `
+  return ``
+}
+
+function helpText() {
+  return `These are the commands. This game is not caps sensitive:
+  HELP - Shows a help display for all the commands (duh)
+  INFO - Some info on the game
+  INVENTORY - Show items the player is holding
+  DESCRIBE {Object} - A short description available for every object
+  LOOK - A short description of the current room
+  NORTH - Go North
+  EAST - Go East
+  SOUTH - Go South
+  WEST - Go West
+  RESET - Resets game. WARNING: all progress will be lost
+
+  All other game commands are typically formatted: {Action} {Object}. Objects are displayed in bold, and will sometimes include adjectives (i.e. 'golden key'). Actions are short words usually 6 letters or less. For example 'throw ball'. These are purposefully unknown, go have fun and see what adventure awaits!
+  `
 }
 
 
@@ -266,14 +306,121 @@ gameLogic = {
 }
 
 
+// Example room
+// room codes describe rooms. vars north, east, south, and west, can point to another room, or give a text message.
+// default, gives a message or room for every direction without a variable
+// Extra variables can be added and will be used by checking if the room is the correct code for that variable
+const exampleRoom = {
+  name: 'Prison Cell',
+  code: '--prisoncell',
+  des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.
+  There is a bed and a scrappy note near the cell door.
+  To your east is a locked cell door.`,
+  default: 'There is a stone wall here',
+  east: '--prisonhallway',
+  objects: ['scrappynote', 'bed', 'celldoor']
+}
+
+
+
+
+
+
+const roomMap = [
+  {
+    name: 'Prison Cell',
+    code: '--prisoncell',
+    des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.
+    There is a bed, a scrappy note near the cell door.
+    To your north is the cell door. It is locked tight`,
+    default: 'There is a stone wall here',
+    north: '--prisonhallway',
+    objects: ['scrappynote', 'bed', 'celldoor']
+  },
+  {
+    name: 'Prison Hallway',
+    code: '--prisonhallway',
+    des: `A dead end hallway with two cells facing each other at the end.`,
+    default: 'There is a stone wall here',
+    south: '--prisoncell',
+    north: '--deadmanscell',
+    east: '--guardedhallway',
+    objects: []
+  },
+  {
+    name: 'Dead Man\'s cell',
+    code: '--deadmanscell',
+    des: `A cell much like your own.
+    There is a bed and the bones of a long dead man.`,
+    default: 'There is a stone wall here',
+    south: '--prisonhallway',
+    objects: ['bone', 'bed']
+  },
+]
+
+
+
+
+const startingRoom = '--prisoncell'
+let currentRoom = ''
+var roomLookup = hashRooms()
+
+
+function setupGame() {
+  currentRoom = startingRoom
+
+  lineHistory = []
+  lineHistory.push(welcomeText())
+  lineHistory.push(lookCommand())
+}
+
+/** Create a dictionary for quick look up of the room from the code */
+function hashRooms() {
+  rooms = {}
+
+  for (let room of roomMap) {
+    rooms[room.code] = room
+  }
+
+  return rooms
+}
+
+
+
 /**
- * Magical function. Entry point of the game. Simply take the input and return some output. DO NOT USE p5js FUNCTIONS.
+ * Magical function. Entry point of the game. Simply take the input and return some output. Store variables for game state in gameLogic. DO NOT USE p5js FUNCTIONS.
  */
 function handleInput(input) {
   console.log(input)
 
+
+  // game is not caps sensitive 
+  input = input.toLowerCase()
+
   if (input.length === 0) {
     return 'No Command given.'
+  }
+
+  // commands without arguments
+  if (input.split(' ').length === 1) {
+    switch (input) {
+      case 'help':
+        return helpText();
+      case 'look':
+        return lookCommand()
+      case 'north':
+        return northCommand()
+      case 'east':
+        return eastCommand()
+      case 'south':
+        return southCommand()
+      case 'west':
+        return westCommand()
+      case 'reset':
+        return 'reset'
+      default:
+        break;
+    }
   }
 
   // input processing
@@ -281,6 +428,75 @@ function handleInput(input) {
   object = input.split(' ').slice(1).join(' ')
 
 
-
   return 'Invalid Action.'
+}
+
+function lookCommand() {
+  r = roomLookup[currentRoom]
+  return r.name + '\n' + r.des
+}
+
+function northCommand() {
+  r = roomLookup[currentRoom]
+  console.log(r.north.slice(0, 2))
+  if (r.north && r.north.slice(0, 2) === '--') {
+    currentRoom = r.north
+    return lookCommand()
+  } else if (r.north) {
+    return r.north
+  } else if (r.default.slice(0, 2) == '--') {
+    currentRoom = r.default
+    return lookCommand()
+  } else {
+    return r.default
+  }
+}
+
+function eastCommand() {
+  r = roomLookup[currentRoom]
+
+  if (r.east && r.east.slice(0, 2) === '--') {
+    currentRoom = r.east
+    return lookCommand()
+  } else if (r.east) {
+    return r.east
+  } else if (r.default.slice(0, 2) == '--') {
+    currentRoom = r.default
+    return lookCommand()
+  } else {
+    return r.default
+  }
+}
+
+function southCommand() {
+  r = roomLookup[currentRoom]
+
+  if (r.south && r.south.slice(0, 2) === '--') {
+    currentRoom = r.south
+    return lookCommand()
+  } else if (r.south) {
+    return r.south
+  } else if (r.default.slice(0, 2) == '--') {
+    currentRoom = r.default
+    return lookCommand()
+  } else {
+    return r.default
+  }
+}
+
+
+function westCommand() {
+  r = roomLookup[currentRoom]
+
+  if (r.west && r.west.slice(0, 2) === '--') {
+    currentRoom = r.west
+    return lookCommand()
+  } else if (r.west) {
+    return r.west
+  } else if (r.default.slice(0, 2) == '--') {
+    currentRoom = r.default
+    return lookCommand()
+  } else {
+    return r.default
+  }
 }
