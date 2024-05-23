@@ -30,6 +30,7 @@ function calculateLines(text, maxWidth) {
       testLine = word
     }
 
+    // test line if it is too long, start a new line
     if (tb.textWidth(testLine) > maxWidth) {
       currentLine = word
       lines += 1
@@ -296,8 +297,7 @@ function helpText() {
   WEST - Go West
   RESET - Resets game. WARNING: all progress will be lost
 
-  All other game commands are typically formatted: {Action} {Object}. Objects are displayed in bold, and will sometimes include adjectives (i.e. 'golden key'). Actions are short words usually 6 letters or less. For example 'throw ball'. These are purposefully unknown, go have fun and see what adventure awaits!
-  `
+  All other game commands are typically formatted: {Action} {Object}. Objects are displayed in bold, and will sometimes include adjectives (i.e. 'golden key'). Actions are short words usually 6 letters or less. For example 'throw ball'. These are purposefully unknown, go have fun and see what adventure awaits!`
 }
 
 
@@ -332,10 +332,10 @@ const roomMap = [
     code: '--prisoncell',
     des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.
     There is a bed, a scrappy note near the cell door.
-    To your north is the cell door. It is locked tight`,
+    To your north is the cell door. It is locked tight\n`,
     default: 'There is a stone wall here',
     north: '--prisonhallway',
-    objects: ['scrappynote', 'bed', 'celldoor']
+    objects: ['scrappy note', 'bed', 'cell door']
   },
   {
     name: 'Prison Hallway',
@@ -356,6 +356,98 @@ const roomMap = [
     south: '--prisonhallway',
     objects: ['bone', 'bed']
   },
+  {
+    name: 'Guarded Hallway',
+    code: '--guardedhallway',
+    des: `A hallway lined with cells.
+    A guard blocks your way east`,
+    north: 'Locked cells block your way',
+    south: 'Locked cells block your way',
+    east: '--pillarroom'
+  },
+  {
+    name: 'Pillar Room',
+    code: '--pillarroom',
+    des: `A room with a pillar in the center. There is a small slot at the top.`,
+    north: '--hallway',
+    east: '--cave1',
+    south: '--darkroom',
+    west: '--guardedhallway',
+  },
+  {
+    name: 'Prison Hallway',
+    code: '--hallway',
+    des: `A hallway`,
+    default: 'There is a wall here',
+    east: '--studyroom',
+    south: '--pillarroom'
+  },
+  {
+    name: 'Study Room',
+    code: '--studyroom',
+    des: `An old study room.
+    There is a candle and a book sitting on a desk.`,
+    default: 'There is a wall here',
+    west: '--hallway'
+  },
+  {
+    name: 'Empty Room',
+    code: '--darkroom',
+    des: `An empty room.
+    There is a plaque on the wall that reads:
+    'Darkness will light the way'`,
+    default: 'There is a wall',
+    north: '--pillarroom',
+    south: '--prayerroom',
+  },
+  {
+    name: 'Prayer room',
+    code: '--prayerroom',
+    des: `A room with benches and an alter. Behind the alter there is a sword mounted on the wall.`,
+    default: 'There is a wall here',
+    north: '--darkroom'
+  },
+  {
+    name: 'Cave',
+    code: '--cave1',
+    des: 'A labrynthine cave system. There is a passage back to the prison to the west.',
+    default: '--cave1',
+    west: '--pillarroom',
+    south: '--cave2'
+  },
+  {
+    name: 'Cave',
+    code: '--cave2',
+    des: 'A labrynthine cave system.',
+    default: '--cave2',
+    east: '--cave1',
+    north: '--cave3'
+  },
+  {
+    name: 'Cave',
+    code: '--cave3',
+    des: 'A labrynthine cave system. There is a chasm to the east',
+    default: '--cave3',
+    south: '--cave2',
+    east: '--chasm'
+  },
+  {
+    name: 'Chasm',
+    code: '--chasm',
+    des: `A large endless chasm stretches from north to south. There is a drawbridge and a lever on the other side.`,
+    north: 'A bottomless chasm',
+    east: '--freedomstairs',
+    south: 'A bottomless chasm',
+    west: '--cave3'
+  },
+  {
+    name: 'Staircase',
+    code: '--freedomstairs',
+    des: 'A long staircase. There is a bright light to the east.',
+    east: '--victory',
+    default: 'There is a wall here',
+    west: '--chasm'
+  }
 ]
 
 
@@ -370,7 +462,7 @@ function setupGame() {
   currentRoom = startingRoom
 
   lineHistory = []
-  lineHistory.push(welcomeText())
+  // lineHistory.push(welcomeText())
   lineHistory.push(lookCommand())
 }
 
@@ -409,13 +501,13 @@ function handleInput(input) {
       case 'look':
         return lookCommand()
       case 'north':
-        return northCommand()
+        return moveCommand('north')
       case 'east':
-        return eastCommand()
+        return moveCommand('east')
       case 'south':
-        return southCommand()
+        return moveCommand('south')
       case 'west':
-        return westCommand()
+        return moveCommand('west')
       case 'reset':
         return 'reset'
       default:
@@ -436,63 +528,22 @@ function lookCommand() {
   return r.name + '\n' + r.des
 }
 
-function northCommand() {
-  r = roomLookup[currentRoom]
-  console.log(r.north.slice(0, 2))
-  if (r.north && r.north.slice(0, 2) === '--') {
-    currentRoom = r.north
-    return lookCommand()
-  } else if (r.north) {
-    return r.north
-  } else if (r.default.slice(0, 2) == '--') {
-    currentRoom = r.default
-    return lookCommand()
-  } else {
-    return r.default
+/**
+ * Move player in a direction.
+ * @param {string} direction North, East, South, or West
+ * @returns Result of attempting movement, either a description of new room, or a text 
+ */
+function moveCommand(direction) {
+  if (!direction in ['north', 'east', 'south', 'west']) {
+    throw Error('Nah bro, move command only takes \'north\', \'east\', \'south\', or \'west\'')
   }
-}
 
-function eastCommand() {
   r = roomLookup[currentRoom]
-
-  if (r.east && r.east.slice(0, 2) === '--') {
-    currentRoom = r.east
+  if (r[direction] && r[direction].slice(0, 2) === '--') {
+    currentRoom = r[direction]
     return lookCommand()
-  } else if (r.east) {
-    return r.east
-  } else if (r.default.slice(0, 2) == '--') {
-    currentRoom = r.default
-    return lookCommand()
-  } else {
-    return r.default
-  }
-}
-
-function southCommand() {
-  r = roomLookup[currentRoom]
-
-  if (r.south && r.south.slice(0, 2) === '--') {
-    currentRoom = r.south
-    return lookCommand()
-  } else if (r.south) {
-    return r.south
-  } else if (r.default.slice(0, 2) == '--') {
-    currentRoom = r.default
-    return lookCommand()
-  } else {
-    return r.default
-  }
-}
-
-
-function westCommand() {
-  r = roomLookup[currentRoom]
-
-  if (r.west && r.west.slice(0, 2) === '--') {
-    currentRoom = r.west
-    return lookCommand()
-  } else if (r.west) {
-    return r.west
+  } else if (r[direction]) {
+    return r[direction]
   } else if (r.default.slice(0, 2) == '--') {
     currentRoom = r.default
     return lookCommand()
