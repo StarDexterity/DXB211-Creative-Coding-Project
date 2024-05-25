@@ -280,12 +280,19 @@ function mouseReleased() {
 /////////////////////////////////////////////////////////////|
 
 
-function welcomeText() {
-  return ``
+
+
+function infoCommand() {
+  return `You wake up in a dark dank cell in an underground dungeon accused of a crime you didn't commit. The road ahead will be treacherous, but you must achieve your freedom at any cost.
+  
+  To escape you must traverse the dungeon, solve puzzles, and slay monsters. The dungeon is divided into rooms which can be navigated with compass commands. You will find useful and useless items. There are enemies which will try to kill you. You can attack them and will do so with whatever you have equiped. You can only hold one item in your inventory.
+
+  Type HELP for more info.
+  `
 }
 
-function helpText() {
-  return `These are the commands. This game is not caps sensitive:
+function helpCommand() {
+  return `Commands (not caps sensitive):
   HELP - Shows a help display for all the commands (duh)
   INFO - Some info on the game
   INVENTORY - Show items the player is holding
@@ -297,7 +304,7 @@ function helpText() {
   WEST - Go West
   RESET - Resets game. WARNING: all progress will be lost
 
-  All other game commands are typically formatted: {Action} {Object}. Objects are displayed in bold, and will sometimes include adjectives (i.e. 'golden key'). Actions are short words usually 6 letters or less. For example 'throw ball'. These are purposefully unknown, go have fun and see what adventure awaits!`
+  All other game commands are hidden and typically formatted: {Action} {Object}. Objects will sometimes include adjectives (i.e. 'golden key'), but can be called without them so long as there isn't any ambiguity. Actions are short words usually 6 letters or less. For example 'throw ball'.`
 }
 
 
@@ -482,7 +489,7 @@ function setupGame() {
   currentRoom = startingRoom
 
   lineHistory = []
-  // lineHistory.push(welcomeText())
+  lineHistory.push(infoCommand())
   lineHistory.push(lookCommand())
 }
 
@@ -570,7 +577,9 @@ function handleInput(input) {
   if (input.split(' ').length === 1) {
     switch (input) {
       case 'help':
-        return helpText();
+        return helpCommand()
+      case 'info':
+        return infoCommand()
       case 'look':
         return lookCommand()
       case 'north':
