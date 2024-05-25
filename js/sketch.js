@@ -143,9 +143,9 @@ function drawTextDisplay() {
 
   tb.fill(textbox.sb.backbarFill)
   tb.rect(textbox.width - textbox.sb.width,
-            0,
-            textbox.sb.width,
-            textbox.height
+    0,
+    textbox.sb.width,
+    textbox.height
   )
 
   tb.noStroke()
@@ -174,7 +174,7 @@ function draw() {
   // for designing the interface and debugging
   // strokeWeight(1)
   // text(`${mouseX}, ${mouseY}`, 320, 25)
-  
+
   // input
   noStroke()
   fill(255)
@@ -205,7 +205,7 @@ function keyPressed() {
       lineHistory.push(inputBuffer)
       lineHistory.push(output)
     }
-    
+
 
     // clear input buffer
     inputBuffer = ''
@@ -318,7 +318,7 @@ const exampleRoom = {
   To your east is a locked cell door.`,
   default: 'There is a stone wall here',
   east: '--prisonhallway',
-  objects: ['scrappynote', 'bed', 'celldoor']
+  objects: ['scrappynote']
 }
 
 
@@ -330,12 +330,10 @@ const roomMap = [
   {
     name: 'Prison Cell',
     code: '--prisoncell',
-    des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.
-    There is a bed, a scrappy note near the cell door.
-    To your north is the cell door. It is locked tight\n`,
+    des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.`,
     default: 'There is a stone wall here',
     north: '--prisonhallway',
-    objects: ['scrappy note', 'bed', 'cell door']
+    objects: ['scrappynote']
   },
   {
     name: 'Prison Hallway',
@@ -354,7 +352,7 @@ const roomMap = [
     There is a bed and the bones of a long dead man.`,
     default: 'There is a stone wall here',
     south: '--prisonhallway',
-    objects: ['bone', 'bed']
+    objects: ['bone']
   },
   {
     name: 'Guarded Hallway',
@@ -363,7 +361,8 @@ const roomMap = [
     A guard blocks your way east`,
     north: 'Locked cells block your way',
     south: 'Locked cells block your way',
-    east: '--pillarroom'
+    east: '--pillarroom',
+    objects: []
   },
   {
     name: 'Pillar Room',
@@ -373,6 +372,7 @@ const roomMap = [
     east: '--cave1',
     south: '--darkroom',
     west: '--guardedhallway',
+    objects: []
   },
   {
     name: 'Prison Hallway',
@@ -380,7 +380,8 @@ const roomMap = [
     des: `A hallway`,
     default: 'There is a wall here',
     east: '--studyroom',
-    south: '--pillarroom'
+    south: '--pillarroom',
+    objects: []
   },
   {
     name: 'Study Room',
@@ -388,7 +389,8 @@ const roomMap = [
     des: `An old study room.
     There is a candle and a book sitting on a desk.`,
     default: 'There is a wall here',
-    west: '--hallway'
+    west: '--hallway',
+    objects: []
   },
   {
     name: 'Empty Room',
@@ -399,13 +401,15 @@ const roomMap = [
     default: 'There is a wall',
     north: '--pillarroom',
     south: '--prayerroom',
+    objects: []
   },
   {
     name: 'Prayer room',
     code: '--prayerroom',
     des: `A room with benches and an alter. Behind the alter there is a sword mounted on the wall.`,
     default: 'There is a wall here',
-    north: '--darkroom'
+    north: '--darkroom',
+    objects: []
   },
   {
     name: 'Cave',
@@ -413,15 +417,17 @@ const roomMap = [
     des: 'A labrynthine cave system. There is a passage back to the prison to the west.',
     default: '--cave1',
     west: '--pillarroom',
-    south: '--cave2'
+    south: '--cave2',
+    objects: []
   },
   {
     name: 'Cave',
     code: '--cave2',
     des: 'A labrynthine cave system.',
     default: '--cave2',
+    north: '--cave3',
     east: '--cave1',
-    north: '--cave3'
+    objects: []
   },
   {
     name: 'Cave',
@@ -429,7 +435,8 @@ const roomMap = [
     des: 'A labrynthine cave system. There is a chasm to the east',
     default: '--cave3',
     south: '--cave2',
-    east: '--chasm'
+    east: '--chasm',
+    objects: []
   },
   {
     name: 'Chasm',
@@ -438,24 +445,37 @@ const roomMap = [
     north: 'A bottomless chasm',
     east: '--freedomstairs',
     south: 'A bottomless chasm',
-    west: '--cave3'
+    west: '--cave3',
+    objects: []
   },
   {
     name: 'Staircase',
     code: '--freedomstairs',
     des: 'A long staircase. There is a bright light to the east.',
-    east: '--victory',
     default: 'There is a wall here',
-    west: '--chasm'
+    east: '--victory',
+    west: '--chasm',
+    objects: []
+  }
+]
+
+const objectList = [
+  {
+    noun: 'note',
+    adjectives: 'scrappy',
+    code: 'scrappynote',
+    isTakeable: true, // take, grab, drop, put, place
   }
 ]
 
 
 
-
+// game variables
 const startingRoom = '--prisoncell'
 let currentRoom = ''
+let inventory = ''
 var roomLookup = hashRooms()
+var objectLookup = hashObjects()
 
 
 function setupGame() {
@@ -477,6 +497,56 @@ function hashRooms() {
   return rooms
 }
 
+/** Create a dictionary for quick look up of the object from the code */
+function hashObjects() {
+  objects = {}
+
+  for (let object of objectList) {
+    objects[object.code] = object
+  }
+
+  return objects
+}
+
+
+
+exampleObject = {
+  noun: 'note',
+  adjectives: 'scrappy',
+  code: 'scrappynote',
+  isTakeable: true // take, grab, drop, put, place
+}
+
+/** The full display name of an object, it's noun and adjectives */
+function displayObjectName(obj) {
+  let object
+  if (typeof obj === 'string') {
+    object = objectLookup[obj]
+  } else {
+    object = obj
+  }
+
+  if (!object?.noun) {
+    throw Error('Not an object')
+  }
+
+  return object.adjectives + ' ' + object.noun
+}
+
+/** Takes a noun and gives it an indefinite article a/an */
+function article(objDispName) {
+  fLetter = objDispName[0]
+  if (fLetter in ['a', 'e', 'i', 'o', 'u']) {
+    return 'an ' + objDispName
+  } else {
+    return 'a ' + objDispName
+  }
+}
+
+
+
+
+
 
 
 /**
@@ -484,6 +554,9 @@ function hashRooms() {
  */
 function handleInput(input) {
   console.log(input)
+
+  // room
+  room = roomLookup[currentRoom]
 
 
   // game is not caps sensitive 
@@ -508,24 +581,115 @@ function handleInput(input) {
         return moveCommand('south')
       case 'west':
         return moveCommand('west')
+      case 'inventory':
+        return inventoryCommand()
       case 'reset':
         return 'reset'
       default:
-        break;
+        return 'Command not recognised'
     }
   }
 
+
   // input processing
   action = input.split(' ', 1)[0]
-  object = input.split(' ').slice(1).join(' ')
+  objectStr = input.split(' ').slice(1).join(' ')
+  
+  // will attempt to turn object string into an object object
+  object = null
+
+  console.log(action + ', ' + objectStr)
 
 
-  return 'Invalid Action.'
+  // find object
+  const potentialObjects = room.objects.slice()
+  if (inventory in objectLookup) {
+    potentialObjects.push(inventory)
+  }
+  
+  for (let potentialObj of potentialObjects) {
+    potentialObj = objectLookup[potentialObj]
+    if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
+      object = potentialObj
+    }
+  }
+
+  // looked for object in room and inventory, could not find
+  if (!object) {
+    return objectStr + ' not found'
+  }
+
+  if (['take', 'grab'].includes(action) && object.isTakeable) {
+    return takeCommand(object)
+  } else if (action === 'drop'  && object.isTakeable) {
+    return dropCommand(object)
+  }
+
+
+  return 'Invalid action for ' + displayObjectName(object)
+}
+
+function takeCommand(object) {
+  if (inventory !== '') {
+    return 'You must drop the object you are currently holding first'
+  } else {
+    // put object in inventory
+    inventory = object.code
+
+    // remove object from remove
+    r = roomLookup[currentRoom]
+    r.objects = r.objects.filter((x) => x !== object.code)
+
+    return 'You have taken ' + displayObjectName(object)
+  }
+}
+
+function dropCommand(object) {
+  if (inventory !== object.code) {
+    return 'You are not carrying that'
+  } else {
+    // empty inventory
+    inventory = ''
+
+    // put object in room
+    r = roomLookup[currentRoom]
+    r.objects.push(object.code)
+
+    return 'You have dropped ' + displayObjectName(object)
+  }
+}
+
+function inventoryCommand() {
+  if (inventory.length === 0) {
+    return 'You aren\'t holding anything'
+  } else {
+    return 'You are holding ' + article(displayObjectName(objectLookup[inventory]))
+  }
 }
 
 function lookCommand() {
+  let result = ''
   r = roomLookup[currentRoom]
-  return r.name + '\n' + r.des
+
+  result += r.name
+  result += '\n'
+  result += r.des
+  result += '\n'
+  if (r.objects.length !== 0) {
+    result += 'There is '
+    result += article(displayObjectName(r.objects[0]))
+
+    for (let i = 1; i < r.objects.Length; i++) {
+      result += ', '
+      if (i === r.objects.length - 1) {
+        result += 'and '
+      }
+      result == article(displayObjectName(r.objects[i]))
+    }
+
+    result += '.'
+  }
+  return result
 }
 
 /**
