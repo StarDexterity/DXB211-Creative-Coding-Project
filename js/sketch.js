@@ -370,7 +370,8 @@ const roomMapBlueprint = [
     north: 'Locked cells block your way',
     south: 'Locked cells block your way',
     east: '--pillarroom',
-    objects: []
+    objects: [],
+    enemies: ['--westhallwayguard']
   },
   {
     name: 'Pillar Room',
@@ -526,6 +527,15 @@ const objectListBlueprint = [
   }
 ]
 
+enemyListBlueprint = [
+  {
+    name: 'prison guard',
+    code: '--westhallwayguard',
+    hp: 100,
+    attackDamge: (15, 25)
+  }
+]
+
 const startingRoom = '--prisoncell'
 
 // game variables
@@ -618,6 +628,18 @@ function article(objDispName) {
 }
 
 
+/** Environment update
+ * Happens after taking an action, useful for things like traps and enemy attacks
+ */
+function environmentUpdate() {
+  // enemy
+  room = roomLookup[currentRoom]
+  if (room.enemies) {
+    for (enemy in room.enemies) {
+      
+    }
+  }
+}
 
 
 /**
