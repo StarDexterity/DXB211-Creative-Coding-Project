@@ -326,18 +326,22 @@ const exampleRoom = {
 }
 
 
+const gameStateSettings = {
+  prayed: false,
+  holySwordTaken: false,
+  holySwordPlaced: false
+}
 
 
-
-
-const roomMap = [
+/** Used to initialize the rooms, do not edit directly */
+const roomMapBlueprint = [
   {
     name: 'Prison Cell',
     code: '--prisoncell',
     des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.`,
     default: 'There is a stone wall here',
     north: '--prisonhallway',
-    objects: ['scrappynote']
+    objects: ['--scrappynote']
   },
   {
     name: 'Prison Hallway',
@@ -355,7 +359,7 @@ const roomMap = [
     des: `A cell much like your own. The resident here has met an unfortunate fate a long time ago.`,
     default: 'There is a stone wall here',
     south: '--prisonhallway',
-    objects: ['armbone']
+    objects: ['--armbone']
   },
   {
     name: 'Guarded Hallway',
@@ -370,12 +374,12 @@ const roomMap = [
   {
     name: 'Pillar Room',
     code: '--pillarroom',
-    des: `A room with a pillar in the center.`,
+    des: `A room with a stone obelisk in the center. The obelisk has a slot at the top.`,
     north: '--hallway',
     east: '--cave1',
     south: 'The south corridor is blocked by web',
     west: '--guardedhallway',
-    objects: ['swordpillar']
+    objects: []
   },
   {
     name: 'Prison Hallway',
@@ -389,16 +393,15 @@ const roomMap = [
   {
     name: 'Study Room',
     code: '--studyroom',
-    des: `An old study room.`,
+    des: `An old study room. The walls are lined with bookshelves.`,
     default: 'There is a bookshelf here',
     west: '--hallway',
-    objects: ['stickcandle', 'oldbook']
+    objects: ['--stickcandle', '--oldbook']
   },
   {
     name: 'Empty Room',
     code: '--darkroom',
-    des: `An empty room.
-    There is a plaque on the wall that reads:
+    des: `There is a plaque on the wall that reads:
     'Darkness will light the way'`,
     default: 'There is a wall',
     north: '--pillarroom',
@@ -411,7 +414,8 @@ const roomMap = [
     des: `A room with benches and an alter. Behind the alter there is a sword mounted on the wall.`,
     default: 'There is a wall here',
     north: '--darkroom',
-    objects: []
+    objects: [],
+
   },
   {
     name: 'Cave',
@@ -464,18 +468,19 @@ const roomMap = [
 exampleObject = {
   noun: 'note',
   adjectives: 'scrappy',
-  code: 'scrappynote',
+  code: '--scrappynote',
   isTakeable: true, // take, grab, drop, put, place
   isWeapon: true, // can be used to attack. isTakeable needs to also be true for this to work.
   attackDamage: (30, 30) // min and max values of attack, only needs to be here if isWeapon is true
 }
 
-const objectList = [
+/** Used to initialize the objects, do not edit directly */
+const objectListBlueprint = [
   {
     noun: 'note',
     adjectives: 'scrappy',
     des: 'A scrappy looking piece of paper, scribbled on in a hurry.',
-    code: 'scrappynote',
+    code: '--scrappynote',
     isTakeable: true, // take, grab, drop, put, place
     isWeapon: false,
     isAttackable: false
@@ -483,7 +488,7 @@ const objectList = [
   {
     noun: 'bone',
     adjectives: 'arm',
-    code: 'armbone',
+    code: '--armbone',
     des: 'The arm bone of a long dead prisoner. Looks like it would hurt to get hit with it.',
     isTakeable: true,
     isWeapon: true,
@@ -491,18 +496,9 @@ const objectList = [
     attackDamage: (15, 30)
   },
   {
-    noun: 'pillar',
-    adjectives: '',
-    code: 'swordpillar',
-    des: 'A lone pillar hip tall with a diamond slot in the top, something goes here.',
-    isTakeable: false,
-    isWeapon: false,
-    isAttackable: false
-  },
-  {
     noun: 'candle',
     adjectives: 'stick',
-    code: 'stickcandle',
+    code: '--stickcandle',
     des: 'A lit candle stick',
     isTakeable: true,
     isWeapon: false,
@@ -511,7 +507,7 @@ const objectList = [
   {
     noun: 'book',
     adjectives: 'old',
-    code: 'oldbook',
+    code: '--oldbook',
     des: 'An old book with ornate golden lettering.',
     isTakeable: true,
     isWeapon: false,
@@ -519,31 +515,44 @@ const objectList = [
     text: `Placeholder text`
   },
   {
-    noun: 'guard',
-    adjectives: '',
-    code: 'guard1',
-    des: 'A lone pillar hip tall with a diamond slot in the top, something goes here.',
-    isTakeable: false,
-    isWeapon: false,
-    isAttackable: true,
-    hp: 100
+    noun: 'sword',
+    adjectives: 'holy',
+    code: '--holysword',
+    des: 'A holy sword used in a long and bloody crusade',
+    isTakeable: true,
+    isWeapon: true,
+    attackDamage: (30, 50)
   }
 ]
 
-
+const startingRoom = '--prisoncell'
 
 // game variables
-const startingRoom = '--prisoncell'
-let currentRoom = ''
-let inventory = []
-var roomLookup = hashRooms()
-var objectLookup = hashObjects()
+let currentRoom
+let inventory
+let roomLookup
+let objectLookup
+let objectList
+let roomMap
+let gameState
+
 const debugMode = true
 
 
+/** Deep copy a nested data structure */
+function copyData(data) {
+  return JSON.parse(JSON.stringify(data))
+}
+
+/** Make everything back to how it was, cool JSON trick to reset big nested room and object lists */
 function setupGame() {
   currentRoom = startingRoom
-
+  inventory = []
+  roomMap = copyData(roomMapBlueprint)
+  objectList = copyData(objectListBlueprint)
+  gameState = copyData(gameStateSettings)
+  roomLookup = hashRooms()
+  objectLookup = hashObjects()
   lineHistory = []
   lineHistory.push(infoCommand())
   lineHistory.push(lookCommand())
@@ -585,13 +594,22 @@ function displayObjectName(obj) {
     throw Error('Not an object')
   }
 
-  return object.adjectives + ' ' + object.noun
+  result = ''
+
+  if (object?.adjectives) {
+    result += object.adjectives
+    result += ' '
+  }
+
+  result += object.noun
+
+  return result
 }
 
 /** Takes a noun and gives it an indefinite article a/an */
 function article(objDispName) {
   fLetter = objDispName[0]
-  if (fLetter in ['a', 'e', 'i', 'o', 'u']) {
+  if (['a', 'e', 'i', 'o', 'u'].includes(fLetter)) {
     return 'an ' + objDispName
   } else {
     return 'a ' + objDispName
@@ -662,42 +680,51 @@ function handleInput(input) {
     }
   }
 
-
-  
-  // will attempt to turn object string into an object object
-  object = null
-
-  console.log(action + ', ' + objectStr)
-
-
-  // find object
-  const potentialObjects = room.objects.slice().concat(inventory.slice())
-  
-  for (let potentialObj of potentialObjects) {
-    potentialObj = objectLookup[potentialObj]
-    if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
-      object = potentialObj
+  // prayer room
+  if (currentRoom === '--prayerroom') {
+    let result = prayerRoomPuzzle(action, objectStr)
+    if (result) {
+      return result
     }
   }
 
-  // looked for object in room and inventory, could not find
-  if (!object) {
-    return objectStr + ' not found'
+
+
+// will attempt to turn object string into an object object
+object = null
+
+console.log(action + ', ' + objectStr)
+
+
+// find object
+const potentialObjects = room.objects.slice().concat(inventory.slice())
+
+for (let potentialObj of potentialObjects) {
+  potentialObj = objectLookup[potentialObj]
+  if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
+    object = potentialObj
   }
+}
 
 
-  
-
-  if (['take', 'grab'].includes(action) && object.isTakeable) {
-    return takeCommand(object)
-  } else if (action === 'drop'  && object.isTakeable) {
-    return dropCommand(object)
-  } else if (action === 'describe') {
-    return describeCommand(object)
-  }
+// looked for object in room and inventory, could not find
+if (!object) {
+  return objectStr + ' not found'
+}
 
 
-  return 'Invalid action for ' + displayObjectName(object)
+
+
+if (['take', 'grab'].includes(action) && object.isTakeable) {
+  return takeCommand(object)
+} else if (action === 'drop' && object.isTakeable) {
+  return dropCommand(object)
+} else if (action === 'describe') {
+  return describeCommand(object)
+}
+
+
+return 'Invalid action for ' + displayObjectName(object)
 }
 
 function takeCommand(object) {
@@ -779,12 +806,12 @@ function lookCommand() {
     result += 'There is '
     result += article(displayObjectName(r.objects[0]))
 
-    for (let i = 1; i < r.objects.Length; i++) {
+    for (let i = 1; i < r.objects.length; i++) {
       result += ', '
       if (i === r.objects.length - 1) {
         result += 'and '
       }
-      result == article(displayObjectName(r.objects[i]))
+      result += article(displayObjectName(r.objects[i]))
     }
 
     result += '.'
@@ -805,15 +832,15 @@ function moveCommand(direction) {
   moveResult = ''
 
   // pillar room moving south, if has candle, web will get burnt
-  if (currentRoom === '--pillarroom' 
-      && direction === 'south'
-      && inventory.includes('candle')) {
+  if (currentRoom === '--pillarroom'
+    && direction === 'south'
+    && inventory.includes('--stickcandle')) {
     r = roomLookup[currentRoom]
     r.south = '--darkroom'
     moveResult += 'The south hallway is filled with cobwebs. You hold out your candle and burn the cobwebs away.\n\n'
   }
-  
-  
+
+
 
   r = roomLookup[currentRoom]
   if (r[direction] && r[direction].slice(0, 2) === '--') {
@@ -839,4 +866,31 @@ function gotoCommand(roomCode) {
   }
 
   return 'Room does not exist'
+}
+
+
+function prayerRoomPuzzle(action, objectStr) {
+  if (action === 'take' && objectStr === 'sword') {
+    if (gameStateSettings.swordTaken) {
+      return
+    }
+
+    if (!gameStateSettings.prayed) {
+      return 'You attempt to pry the sword off the wall but it will not budge.'
+    }
+
+    if (inventory.length > 1) {
+      return 'You will need to drop something first'
+    }
+
+    gameStateSettings.swordTaken = true
+    inventory.push('--holysword')
+    return 'You take the sword off the wall'
+  }
+
+
+  if (action === 'pray' && objectStr === 'alter') {
+    gameStateSettings.prayed = true
+    return 'You bow your head to pay respect.'
+  }
 }
