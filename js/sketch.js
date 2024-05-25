@@ -308,9 +308,6 @@ function helpCommand() {
 }
 
 
-gameLogic = {
-
-}
 
 
 // Example room
@@ -355,11 +352,10 @@ const roomMap = [
   {
     name: 'Dead Man\'s cell',
     code: '--deadmanscell',
-    des: `A cell much like your own.
-    There is a bed and the bones of a long dead man.`,
+    des: `A cell much like your own. The resident here has met an unfortunate fate a long time ago.`,
     default: 'There is a stone wall here',
     south: '--prisonhallway',
-    objects: ['bone']
+    objects: ['armbone']
   },
   {
     name: 'Guarded Hallway',
@@ -374,12 +370,12 @@ const roomMap = [
   {
     name: 'Pillar Room',
     code: '--pillarroom',
-    des: `A room with a pillar in the center. There is a small slot at the top.`,
+    des: `A room with a pillar in the center.`,
     north: '--hallway',
     east: '--cave1',
-    south: '--darkroom',
+    south: 'The south corridor is blocked by web',
     west: '--guardedhallway',
-    objects: []
+    objects: ['swordpillar']
   },
   {
     name: 'Prison Hallway',
@@ -393,11 +389,10 @@ const roomMap = [
   {
     name: 'Study Room',
     code: '--studyroom',
-    des: `An old study room.
-    There is a candle and a book sitting on a desk.`,
-    default: 'There is a wall here',
+    des: `An old study room.`,
+    default: 'There is a bookshelf here',
     west: '--hallway',
-    objects: []
+    objects: ['stickcandle', 'oldbook']
   },
   {
     name: 'Empty Room',
@@ -466,12 +461,72 @@ const roomMap = [
   }
 ]
 
+exampleObject = {
+  noun: 'note',
+  adjectives: 'scrappy',
+  code: 'scrappynote',
+  isTakeable: true, // take, grab, drop, put, place
+  isWeapon: true, // can be used to attack. isTakeable needs to also be true for this to work.
+  attackDamage: (30, 30) // min and max values of attack, only needs to be here if isWeapon is true
+}
+
 const objectList = [
   {
     noun: 'note',
     adjectives: 'scrappy',
+    des: 'A scrappy looking piece of paper, scribbled on in a hurry.',
     code: 'scrappynote',
     isTakeable: true, // take, grab, drop, put, place
+    isWeapon: false,
+    isAttackable: false
+  },
+  {
+    noun: 'bone',
+    adjectives: 'arm',
+    code: 'armbone',
+    des: 'The arm bone of a long dead prisoner. Looks like it would hurt to get hit with it.',
+    isTakeable: true,
+    isWeapon: true,
+    isAttackable: false,
+    attackDamage: (15, 30)
+  },
+  {
+    noun: 'pillar',
+    adjectives: '',
+    code: 'swordpillar',
+    des: 'A lone pillar hip tall with a diamond slot in the top, something goes here.',
+    isTakeable: false,
+    isWeapon: false,
+    isAttackable: false
+  },
+  {
+    noun: 'candle',
+    adjectives: 'stick',
+    code: 'stickcandle',
+    des: 'A lit candle stick',
+    isTakeable: true,
+    isWeapon: false,
+    isAttackable: false
+  },
+  {
+    noun: 'book',
+    adjectives: 'old',
+    code: 'oldbook',
+    des: 'An old book with ornate golden lettering.',
+    isTakeable: true,
+    isWeapon: false,
+    isAttackable: false,
+    text: `Placeholder text`
+  },
+  {
+    noun: 'guard',
+    adjectives: '',
+    code: 'guard1',
+    des: 'A lone pillar hip tall with a diamond slot in the top, something goes here.',
+    isTakeable: false,
+    isWeapon: false,
+    isAttackable: true,
+    hp: 100
   }
 ]
 
@@ -480,9 +535,10 @@ const objectList = [
 // game variables
 const startingRoom = '--prisoncell'
 let currentRoom = ''
-let inventory = ''
+let inventory = []
 var roomLookup = hashRooms()
 var objectLookup = hashObjects()
+const debugMode = true
 
 
 function setupGame() {
@@ -515,14 +571,6 @@ function hashObjects() {
   return objects
 }
 
-
-
-exampleObject = {
-  noun: 'note',
-  adjectives: 'scrappy',
-  code: 'scrappynote',
-  isTakeable: true // take, grab, drop, put, place
-}
 
 /** The full display name of an object, it's noun and adjectives */
 function displayObjectName(obj) {
@@ -603,6 +651,18 @@ function handleInput(input) {
   // input processing
   action = input.split(' ', 1)[0]
   objectStr = input.split(' ').slice(1).join(' ')
+
+  // debug commands
+  if (debugMode && input.split(' ').length === 2) {
+    switch (action) {
+      case 'goto':
+        return gotoCommand(objectStr)
+      default:
+        break;
+    }
+  }
+
+
   
   // will attempt to turn object string into an object object
   object = null
@@ -611,10 +671,7 @@ function handleInput(input) {
 
 
   // find object
-  const potentialObjects = room.objects.slice()
-  if (inventory in objectLookup) {
-    potentialObjects.push(inventory)
-  }
+  const potentialObjects = room.objects.slice().concat(inventory.slice())
   
   for (let potentialObj of potentialObjects) {
     potentialObj = objectLookup[potentialObj]
@@ -628,10 +685,15 @@ function handleInput(input) {
     return objectStr + ' not found'
   }
 
+
+  
+
   if (['take', 'grab'].includes(action) && object.isTakeable) {
     return takeCommand(object)
   } else if (action === 'drop'  && object.isTakeable) {
     return dropCommand(object)
+  } else if (action === 'describe') {
+    return describeCommand(object)
   }
 
 
@@ -639,11 +701,13 @@ function handleInput(input) {
 }
 
 function takeCommand(object) {
-  if (inventory !== '') {
+  if (inventory.length === 2) {
     return 'You must drop the object you are currently holding first'
+  } else if (inventory.includes(object.code)) {
+    return 'You are already holding this item'
   } else {
     // put object in inventory
-    inventory = object.code
+    inventory.push(object.code)
 
     // remove object from remove
     r = roomLookup[currentRoom]
@@ -653,12 +717,27 @@ function takeCommand(object) {
   }
 }
 
+function attackCommand(target, weapon) {
+  if (!inventory.includes(weapon)) {
+    return 'You don\'t have that to attack with'
+  }
+
+  if (!weapon.isWeapon) {
+    return 'You can\'t attack with that'
+  }
+
+  if (!target.isAttackable) {
+    return 'You can\'t attack that'
+  }
+
+}
+
 function dropCommand(object) {
-  if (inventory !== object.code) {
+  if (!inventory.includes(object.code)) {
     return 'You are not carrying that'
   } else {
     // empty inventory
-    inventory = ''
+    inventory = []
 
     // put object in room
     r = roomLookup[currentRoom]
@@ -672,8 +751,20 @@ function inventoryCommand() {
   if (inventory.length === 0) {
     return 'You aren\'t holding anything'
   } else {
-    return 'You are holding ' + article(displayObjectName(objectLookup[inventory]))
+    result = ''
+    result += 'You are holding '
+    result += article(displayObjectName(objectLookup[inventory[0]]))
+    if (inventory.length > 1) {
+      result += ', and '
+      result += article(displayObjectName(objectLookup[inventory[1]]))
+    }
+    result += '.'
+    return result
   }
+}
+
+function describeCommand(object) {
+  return object.des
 }
 
 function lookCommand() {
@@ -711,16 +802,41 @@ function moveCommand(direction) {
     throw Error('Nah bro, move command only takes \'north\', \'east\', \'south\', or \'west\'')
   }
 
+  moveResult = ''
+
+  // pillar room moving south, if has candle, web will get burnt
+  if (currentRoom === '--pillarroom' 
+      && direction === 'south'
+      && inventory.includes('candle')) {
+    r = roomLookup[currentRoom]
+    r.south = '--darkroom'
+    moveResult += 'The south hallway is filled with cobwebs. You hold out your candle and burn the cobwebs away.\n\n'
+  }
+  
+  
+
   r = roomLookup[currentRoom]
   if (r[direction] && r[direction].slice(0, 2) === '--') {
     currentRoom = r[direction]
-    return lookCommand()
+    moveResult += lookCommand()
   } else if (r[direction]) {
-    return r[direction]
+    moveResult += r[direction]
   } else if (r.default.slice(0, 2) == '--') {
     currentRoom = r.default
-    return lookCommand()
+    moveResult += lookCommand()
   } else {
-    return r.default
+    moveResult += r.default
   }
+
+  return moveResult
+}
+
+/** Debug command for quickly getting to a room */
+function gotoCommand(roomCode) {
+  if (roomCode in roomLookup) {
+    currentRoom = roomCode
+    return lookCommand()
+  }
+
+  return 'Room does not exist'
 }
