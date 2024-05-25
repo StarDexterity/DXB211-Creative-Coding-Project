@@ -329,7 +329,8 @@ const exampleRoom = {
 const gameStateSettings = {
   prayed: false,
   holySwordTaken: false,
-  holySwordPlaced: false
+  holySwordPlaced: false,
+  darkPassage: false
 }
 
 
@@ -376,16 +377,16 @@ const roomMapBlueprint = [
     code: '--pillarroom',
     des: `A room with a stone obelisk in the center. The obelisk has a slot at the top.`,
     north: '--hallway',
-    east: '--cave1',
-    south: 'The south corridor is blocked by web',
+    east: 'A stone wall with an outline of a door.',
+    south: 'The south corridor is blocked by web.',
     west: '--guardedhallway',
     objects: []
   },
   {
     name: 'Prison Hallway',
     code: '--hallway',
-    des: `A hallway`,
-    default: 'There is a wall here',
+    des: ``,
+    default: 'There is a wall here.',
     east: '--studyroom',
     south: '--pillarroom',
     objects: []
@@ -394,7 +395,7 @@ const roomMapBlueprint = [
     name: 'Study Room',
     code: '--studyroom',
     des: `An old study room. The walls are lined with bookshelves.`,
-    default: 'There is a bookshelf here',
+    default: 'There is a bookshelf here.',
     west: '--hallway',
     objects: ['--stickcandle', '--oldbook']
   },
@@ -402,17 +403,17 @@ const roomMapBlueprint = [
     name: 'Empty Room',
     code: '--darkroom',
     des: `There is a plaque on the wall that reads:
-    'Darkness will light the way'`,
-    default: 'There is a wall',
+    'Darkness will light the way'.`,
+    secDes: `A passage has revealed southwards`,
+    default: 'There is a wall.',
     north: '--pillarroom',
-    south: '--prayerroom',
     objects: []
   },
   {
     name: 'Prayer room',
     code: '--prayerroom',
-    des: `A room with benches and an alter. Behind the alter there is a sword mounted on the wall.`,
-    default: 'There is a wall here',
+    des: `A holy room with an alter. Behind the alter there is a sword mounted on the wall.`,
+    default: 'There is a wall here.',
     north: '--darkroom',
     objects: [],
 
@@ -518,7 +519,7 @@ const objectListBlueprint = [
     noun: 'sword',
     adjectives: 'holy',
     code: '--holysword',
-    des: 'A holy sword used in a long and bloody crusade',
+    des: 'A holy sword used in a long and bloody crusade.',
     isTakeable: true,
     isWeapon: true,
     attackDamage: (30, 50)
@@ -619,9 +620,6 @@ function article(objDispName) {
 
 
 
-
-
-
 /**
  * Magical function. Entry point of the game. Simply take the input and return some output. Store variables for game state in gameLogic. DO NOT USE p5js FUNCTIONS.
  */
@@ -689,42 +687,49 @@ function handleInput(input) {
   }
 
 
+  // will attempt to turn object string into an object object
+  object = null
 
-// will attempt to turn object string into an object object
-object = null
-
-console.log(action + ', ' + objectStr)
+  console.log(action + ', ' + objectStr)
 
 
-// find object
-const potentialObjects = room.objects.slice().concat(inventory.slice())
+  // find object
+  const potentialObjects = room.objects.slice().concat(inventory.slice())
 
-for (let potentialObj of potentialObjects) {
-  potentialObj = objectLookup[potentialObj]
-  if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
-    object = potentialObj
+  for (let potentialObj of potentialObjects) {
+    potentialObj = objectLookup[potentialObj]
+    if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
+      object = potentialObj
+    }
   }
-}
 
 
-// looked for object in room and inventory, could not find
-if (!object) {
-  return objectStr + ' not found'
-}
+  // looked for object in room and inventory, could not find
+  if (!object) {
+    return objectStr + ' not found'
+  }
 
 
 
 
-if (['take', 'grab'].includes(action) && object.isTakeable) {
-  return takeCommand(object)
-} else if (action === 'drop' && object.isTakeable) {
-  return dropCommand(object)
-} else if (action === 'describe') {
-  return describeCommand(object)
-}
+  if (['take', 'grab'].includes(action) && object.isTakeable) {
+    return takeCommand(object)
+  } else if (action === 'drop' && object.isTakeable) {
+    return dropCommand(object)
+  } else if (action === 'describe') {
+    return describeCommand(object)
+  }
+
+  if (object.code === '--holysword') {
+    if (action === 'insert' && currentRoom === '--pillarroom') {
+      room.east = '--cave1'
+      room.des = `A room with a stone obelisk in the center. The obelisk has sword inserted in it. A passage has opened up to the east.`
+      return 'You insert the sword into the obelisk and twist it. The sword is stuck and a passage opens in the east.'
+    }
+  }
 
 
-return 'Invalid action for ' + displayObjectName(object)
+  return 'Invalid action for ' + displayObjectName(object)
 }
 
 function takeCommand(object) {
@@ -800,8 +805,17 @@ function lookCommand() {
 
   result += r.name
   result += '\n'
-  result += r.des
-  result += '\n'
+
+  if (r.des.length > 0) {
+    result += r.des
+    result += '\n'
+  }
+
+  if (currentRoom === `--darkroom` && !hasLight()) {
+    result += r.secDes
+    result += '\n'
+  }
+
   if (r.objects.length !== 0) {
     result += 'There is '
     result += article(displayObjectName(r.objects[0]))
@@ -840,23 +854,37 @@ function moveCommand(direction) {
     moveResult += 'The south hallway is filled with cobwebs. You hold out your candle and burn the cobwebs away.\n\n'
   }
 
+  if (currentRoom === '--darkroom' && !hasLight()) {
+    r.south = '--prayerroom'
+  } else {
+    r.south = undefined
+  }
 
 
   r = roomLookup[currentRoom]
   if (r[direction] && r[direction].slice(0, 2) === '--') {
     currentRoom = r[direction]
     moveResult += lookCommand()
+
   } else if (r[direction]) {
     moveResult += r[direction]
+
   } else if (r.default.slice(0, 2) == '--') {
     currentRoom = r.default
     moveResult += lookCommand()
+
   } else {
     moveResult += r.default
   }
 
   return moveResult
 }
+
+function hasLight() {
+  r = roomLookup[currentRoom]
+  return inventory.includes('--stickcandle') && r.objects.includes('--stickcandle')
+}
+
 
 /** Debug command for quickly getting to a room */
 function gotoCommand(roomCode) {
