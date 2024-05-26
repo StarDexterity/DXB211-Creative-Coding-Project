@@ -478,6 +478,15 @@ function handleInput(input) {
     return 'No Command given.'
   }
 
+  // lock the game if victory room is reached
+  if (currentRoom === '--victory') {
+    if (input === 'reset') {
+      return 'reset'
+    }
+
+    return 'Please type RESET to restart the game'
+  }
+
   // commands without arguments
   if (input.split(' ').length === 1) {
     switch (input) {
@@ -650,7 +659,7 @@ function inventoryCommand() {
     result += 'You are holding '
     result += article(displayObjectName(itemLookup[inventory[0]]))
 
-    for (let i = 0; i < inventory.length; i++) {
+    for (let i = 1; i < inventory.length; i++) {
       result += ', and '
       result += article(displayObjectName(itemLookup[inventory[i]]))
     }

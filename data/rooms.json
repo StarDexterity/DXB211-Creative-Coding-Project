@@ -32,16 +32,13 @@
             ]
         },
         {
-            "name": "Guarded Hallway",
+            "name": "Hallway",
             "code": "--guardedhallway",
             "des": "A hallway lined with cells.",
             "north": "Locked cells block your way",
             "south": "Locked cells block your way",
             "east": "--pillarroom",
-            "objects": [],
-            "enemies": [
-                "--westhallwayguard"
-            ]
+            "objects": []
         },
         {
             "name": "Pillar Room",
@@ -156,6 +153,12 @@
             "default": "There is a wall here",
             "east": "--victory",
             "west": "--chasm2",
+            "objects": []
+        },
+        {
+            "name": "Congrats, you win! Please type RESET to restart the game.",
+            "code": "--victory",
+            "des": "",
             "objects": []
         }
     ]
