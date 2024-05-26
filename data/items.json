@@ -7,7 +7,8 @@
             "code": "--scrappynote",
             "isTakeable": true,
             "isWeapon": false,
-            "isAttackable": false
+            "isAttackable": false,
+            "text": "The key to your cell is hidden inside an unassuming stone. When out of your cell, look for the secret entrance to the cave system to the east. You will need to recover the holy sword to reveal the entrance."
         },
         {
             "noun": "bone",
@@ -32,15 +33,6 @@
             "isAttackable": false
         },
         {
-            "noun": "book",
-            "adjectives": "old",
-            "code": "--oldbook",
-            "des": "An old book with ornate golden lettering.",
-            "isTakeable": true,
-            "isWeapon": false,
-            "isAttackable": false
-        },
-        {
             "noun": "sword",
             "adjectives": "holy",
             "code": "--holysword",
@@ -51,6 +43,38 @@
                 30,
                 50
             ]
+        },
+        {
+            "noun": "grappling hook",
+            "adjectives": "",
+            "code": "--grapplinghook",
+            "des": "A well craft grappling hook.",
+            "isTakeable": true,
+            "isWeapon": false
+        },
+        {
+            "noun": "coin",
+            "adjectives": "gold",
+            "code": "--goldcoin",
+            "des": "",
+            "isTakeable": true,
+            "isWeapon": false
+        },
+        {
+            "noun": "pebble",
+            "adjectives": "",
+            "code": "--keypebble",
+            "des": "An small unassuming stone.",
+            "isTakeable": true,
+            "isWeapon": false
+        },
+        {
+            "noun": "key",
+            "adjectives": "cell door",
+            "code": "--cellkey",
+            "des": "Key to your cell",
+            "isTakeable": true,
+            "isWeapon": false
         }
     ]
 ]

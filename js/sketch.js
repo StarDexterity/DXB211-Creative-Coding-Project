@@ -5,15 +5,13 @@ function preload() {
 }
 
 // Text data
-let itemsJSON 
+let itemsJSON
 let roomsJSON
 let inputBuffer = ''
 let lineHistory = []
 
 // Textbox graphics buffer
 let tb
-
-
 
 
 function calculateLines(text, maxWidth) {
@@ -194,7 +192,6 @@ function draw() {
   strokeWeight(3)
   rect(5, 5, width - 10, height - 10)
   line(5, 440, 395, 440)
-
 }
 
 function keyPressed() {
@@ -289,7 +286,7 @@ function mouseReleased() {
 function infoCommand() {
   return `You wake up in a dark dank cell in an underground dungeon accused of a crime you didn't commit. The road ahead will be treacherous, but you must achieve your freedom at any cost.
   
-  To escape you must traverse the dungeon, solve puzzles, and slay monsters. The dungeon is divided into rooms which can be navigated with compass commands. You will find useful and useless items. There are enemies which will try to kill you. You can attack them and will do so with whatever you have equiped. You can only hold one item in your inventory.
+  To escape you must traverse the dungeon, solve puzzles, and slay monsters. The dungeon is divided into rooms which can be navigated with compass commands. You will find useful and useless items. There are enemies which will try to kill you. You can attack them and will do so with whatever you have equiped. You can hold ${maxInventorySlots} items in your inventory.
 
   Type HELP for more info.
   `
@@ -316,8 +313,14 @@ const gameStateSettings = {
   prayed: false,
   holySwordTaken: false,
   holySwordPlaced: false,
-  darkPassage: false
+  darkPassage: false,
+  cellDoorUnlocked: false
 }
+
+
+// settings
+const startingRoom = '--prisoncell'
+const maxInventorySlots = 3
 
 // enemyListBlueprint = [
 //   {
@@ -328,13 +331,12 @@ const gameStateSettings = {
 //   }
 // ]
 
-const startingRoom = '--prisoncell'
 
 // game variables
 let currentRoom
 let inventory
 let roomLookup
-let objectLookup
+let itemLookup
 let itemList
 let roomMap
 let gameState
@@ -355,7 +357,7 @@ function setupGame() {
   itemList = copyData(itemsJSON)[0]
   gameState = copyData(gameStateSettings)
   roomLookup = hashRooms()
-  objectLookup = hashObjects()
+  itemLookup = hashObjects()
   lineHistory = []
   lineHistory.push(infoCommand())
   lineHistory.push(lookCommand())
@@ -383,12 +385,22 @@ function hashObjects() {
   return objects
 }
 
+/**
+ * 
+ * @param {Object} item object
+ */
+function destroyItem(item) {
+  inventory = inventory.filter((x) => x !== item.code)
+  r = roomLookup[currentRoom]
+  r.objects = r.objects.filter((x) => x !== item.code)
+}
+
 
 /** The full display name of an object, it's noun and adjectives */
 function displayObjectName(obj) {
   let object
   if (typeof obj === 'string') {
-    object = objectLookup[obj]
+    object = itemLookup[obj]
   } else {
     object = obj
   }
@@ -428,11 +440,26 @@ function environmentUpdate() {
   room = roomLookup[currentRoom]
   if (room.enemies) {
     for (enemy in room.enemies) {
-      
+
     }
   }
 }
 
+/** parse an item string into an item */
+function parseItem(itemStr) {
+  // find object
+  const potentialItems = room.objects.slice().concat(inventory.slice())
+  let item = null
+
+  for (let potentialItem of potentialItems) {
+    potentialItem = itemLookup[potentialItem]
+    if (itemStr === potentialItem.noun || itemStr === displayObjectName(potentialItem)) {
+      item = potentialItem
+    }
+  }
+
+  return item
+}
 
 /**
  * Magical function. Entry point of the game. Simply take the input and return some output. Store variables for game state in gameLogic. DO NOT USE p5js FUNCTIONS.
@@ -479,14 +506,14 @@ function handleInput(input) {
 
 
   // input processing
-  action = input.split(' ', 1)[0]
-  objectStr = input.split(' ').slice(1).join(' ')
+  const action = input.split(' ', 1)[0]
+  const itemStr = input.split(' ').slice(1).join(' ')
 
   // debug commands
   if (debugMode && input.split(' ').length === 2) {
     switch (action) {
       case 'goto':
-        return gotoCommand(objectStr)
+        return gotoCommand(itemStr)
       default:
         break;
     }
@@ -494,47 +521,69 @@ function handleInput(input) {
 
   // prayer room
   if (currentRoom === '--prayerroom') {
-    let result = prayerRoomPuzzle(action, objectStr)
+    let result = prayerRoomPuzzle(action, itemStr)
     if (result) {
       return result
     }
   }
 
+  // prison cell door
+  if (currentRoom === '--prisoncell'
+    && ['door', 'cell door'].includes(itemStr)
+    && ['unlock', 'open'].includes(action)
+  ) {
 
-  // will attempt to turn object string into an object object
-  object = null
 
-  console.log(action + ', ' + objectStr)
-
-
-  // find object
-  const potentialObjects = room.objects.slice().concat(inventory.slice())
-
-  for (let potentialObj of potentialObjects) {
-    potentialObj = objectLookup[potentialObj]
-    if (objectStr === potentialObj.noun || objectStr === displayObjectName(potentialObj)) {
-      object = potentialObj
+    if (!inventory.includes('--cellkey')) {
+      return 'This door needs a key'
     }
+
+    if (gameState.cellDoorUnlocked) {
+      return 'cell door is already unlocked.'
+    }
+
+    gameState.cellDoorUnlocked = true
+    return 'The cell door swings open.'
   }
+
+  // will attempt to turn object string into an item object
+  let item = null
+
+  console.log(action + ', ' + itemStr)
+
+
+  item = parseItem(itemStr)
 
 
   // looked for object in room and inventory, could not find
-  if (!object) {
-    return objectStr + ' not found'
+  if (!item) {
+    return itemStr + ' not found'
+  }
+
+  if (item.code === '--keypebble' && ['crack', 'break'].includes(action)) {
+    // destroy pebble and spawn key in current room
+    destroyItem(item)
+    room.objects.push('--cellkey')
+    return 'The pebble breaks with ease and a key drops onto the floor.'
+  }
+
+
+  if (action === "read" && item.text) {
+    return item.text
   }
 
 
 
 
-  if (['take', 'grab'].includes(action) && object.isTakeable) {
-    return takeCommand(object)
-  } else if (action === 'drop' && object.isTakeable) {
-    return dropCommand(object)
+  if (['take', 'grab'].includes(action) && item.isTakeable) {
+    return takeCommand(item)
+  } else if (action === 'drop' && item.isTakeable) {
+    return dropCommand(item)
   } else if (action === 'describe') {
-    return describeCommand(object)
+    return describeCommand(item)
   }
 
-  if (object.code === '--holysword') {
+  if (item.code === '--holysword') {
     if (action === 'insert' && currentRoom === '--pillarroom') {
       room.east = '--cave1'
       room.des = `A room with a stone obelisk in the center. The obelisk has sword inserted in it. A passage has opened up to the east.`
@@ -543,11 +592,11 @@ function handleInput(input) {
   }
 
 
-  return 'Invalid action for ' + displayObjectName(object)
+  return 'Invalid action for ' + displayObjectName(item)
 }
 
 function takeCommand(object) {
-  if (inventory.length === 2) {
+  if (inventory.length === maxInventorySlots) {
     return 'You must drop the object you are currently holding first'
   } else if (inventory.includes(object.code)) {
     return 'You are already holding this item'
@@ -599,11 +648,13 @@ function inventoryCommand() {
   } else {
     result = ''
     result += 'You are holding '
-    result += article(displayObjectName(objectLookup[inventory[0]]))
-    if (inventory.length > 1) {
+    result += article(displayObjectName(itemLookup[inventory[0]]))
+
+    for (let i = 0; i < inventory.length; i++) {
       result += ', and '
-      result += article(displayObjectName(objectLookup[inventory[1]]))
+      result += article(displayObjectName(itemLookup[inventory[i]]))
     }
+
     result += '.'
     return result
   }
@@ -668,15 +719,34 @@ function moveCommand(direction) {
     moveResult += 'The south hallway is filled with cobwebs. You hold out your candle and burn the cobwebs away.\n\n'
   }
 
-  if (currentRoom === '--darkroom' && !hasLight()) {
-    r.south = '--prayerroom'
-  } else {
-    r.south = undefined
-  }
+
 
 
   r = roomLookup[currentRoom]
   if (r[direction] && r[direction].slice(0, 2) === '--') {
+    // extra special traversal rules, not for once off events //
+
+    // cannot cross chasm without grappling hook
+    if (currentRoom === '--chasm1' && direction === 'east'
+      || currentRoom === '--chasm2' && direction === 'west') {
+      if (inventory.includes('--grapplinghook')) {
+        moveResult += 'You cross the gap using your grapping hook.\n\n'
+      } else {
+        return 'The gap is too wide to cross'
+      }
+    }
+
+    // cannot venture into prayer room with light
+    if (currentRoom === '--darkroom' && hasLight()) {
+      return 'There is a wall'
+    }
+
+    // prison cell door is locked
+    if (currentRoom === '--prisoncell' && !gameState.cellDoorUnlocked) {
+      return 'Cell door is locked tight'
+    }
+
+
     currentRoom = r[direction]
     moveResult += lookCommand()
 
@@ -713,11 +783,11 @@ function gotoCommand(roomCode) {
 
 function prayerRoomPuzzle(action, objectStr) {
   if (action === 'take' && objectStr === 'sword') {
-    if (gameStateSettings.swordTaken) {
+    if (gameState.swordTaken) {
       return
     }
 
-    if (!gameStateSettings.prayed) {
+    if (!gameState.prayed) {
       return 'You attempt to pry the sword off the wall but it will not budge.'
     }
 
@@ -725,14 +795,14 @@ function prayerRoomPuzzle(action, objectStr) {
       return 'You will need to drop something first'
     }
 
-    gameStateSettings.swordTaken = true
+    gameState.swordTaken = true
     inventory.push('--holysword')
     return 'You take the sword off the wall'
   }
 
 
   if (action === 'pray' && objectStr === 'alter') {
-    gameStateSettings.prayed = true
+    gameState.prayed = true
     return 'You bow your head to pay respect.'
   }
 }

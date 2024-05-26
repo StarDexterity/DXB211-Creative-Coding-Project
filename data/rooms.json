@@ -7,7 +7,8 @@
             "default": "There is a stone wall here",
             "north": "--prisonhallway",
             "objects": [
-                "--scrappynote"
+                "--scrappynote",
+                "--keypebble"
             ]
         },
         {
@@ -59,7 +60,19 @@
             "default": "There is a wall here.",
             "east": "--studyroom",
             "south": "--pillarroom",
+            "west": "--storageroom",
             "objects": []
+        },
+        {
+            "name": "Storage Room",
+            "code": "--storageroom",
+            "des": "",
+            "default": "There is a wall here.",
+            "east": "--hallway",
+            "objects": [
+                "--goldcoin",
+                "--grapplinghook"
+            ]
         },
         {
             "name": "Study Room",
@@ -68,7 +81,7 @@
             "default": "There is a bookshelf here.",
             "west": "--hallway",
             "objects": [
-                "--stickcandle', '--oldbook"
+                "--stickcandle"
             ]
         },
         {
@@ -78,6 +91,7 @@
             "secDes": "A passage has revealed southwards",
             "default": "There is a wall.",
             "north": "--pillarroom",
+            "south": "--prayerroom",
             "objects": []
         },
         {
@@ -112,17 +126,27 @@
             "des": "A labrynthine cave system. There is a chasm to the east",
             "default": "--cave3",
             "south": "--cave2",
-            "east": "--chasm",
+            "east": "--chasm1",
             "objects": []
         },
         {
             "name": "Chasm",
-            "code": "--chasm",
-            "des": "A large endless chasm stretches from north to south. There is a drawbridge and a lever on the other side.",
+            "code": "--chasm1",
+            "des": "A large endless chasm stretches from north to south. The gap is 3m across. You are on the west side.",
             "north": "A bottomless chasm",
-            "east": "--freedomstairs",
+            "east": "--chasm2",
             "south": "A bottomless chasm",
             "west": "--cave3",
+            "objects": []
+        },
+        {
+            "name": "Chasm",
+            "code": "--chasm2",
+            "des": "A large endless chasm stretches from north to south. The gap is 3m across. You are on the east side.",
+            "north": "A bottomless chasm.",
+            "east": "--freedomstairs",
+            "south": "A bottomless chasm",
+            "west": "--chasm1",
             "objects": []
         },
         {
@@ -131,7 +155,7 @@
             "des": "A long staircase. There is a bright light to the east.",
             "default": "There is a wall here",
             "east": "--victory",
-            "west": "--chasm",
+            "west": "--chasm2",
             "objects": []
         }
     ]
