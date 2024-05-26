@@ -1,8 +1,12 @@
 function preload() {
   pixelFont = loadFont('fonts/Pixelon-E4JEg.otf')
+  itemsJSON = loadJSON('data/items.json')
+  roomsJSON = loadJSON('data/rooms.json')
 }
 
 // Text data
+let itemsJSON 
+let roomsJSON
 let inputBuffer = ''
 let lineHistory = []
 
@@ -308,24 +312,6 @@ function helpCommand() {
 }
 
 
-
-
-// Example room
-// room codes describe rooms. vars north, east, south, and west, can point to another room, or give a text message.
-// default, gives a message or room for every direction without a variable
-// Extra variables can be added and will be used by checking if the room is the correct code for that variable
-const exampleRoom = {
-  name: 'Prison Cell',
-  code: '--prisoncell',
-  des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.
-  There is a bed and a scrappy note near the cell door.
-  To your east is a locked cell door.`,
-  default: 'There is a stone wall here',
-  east: '--prisonhallway',
-  objects: ['scrappynote']
-}
-
-
 const gameStateSettings = {
   prayed: false,
   holySwordTaken: false,
@@ -333,208 +319,14 @@ const gameStateSettings = {
   darkPassage: false
 }
 
-
-/** Used to initialize the rooms, do not edit directly */
-const roomMapBlueprint = [
-  {
-    name: 'Prison Cell',
-    code: '--prisoncell',
-    des: `The cell you have been imprisoned to. The room is small, damp and poorly lit.`,
-    default: 'There is a stone wall here',
-    north: '--prisonhallway',
-    objects: ['--scrappynote']
-  },
-  {
-    name: 'Prison Hallway',
-    code: '--prisonhallway',
-    des: `A dead end hallway with two cells facing each other at the end.`,
-    default: 'There is a stone wall here',
-    south: '--prisoncell',
-    north: '--deadmanscell',
-    east: '--guardedhallway',
-    objects: []
-  },
-  {
-    name: 'Dead Man\'s cell',
-    code: '--deadmanscell',
-    des: `A cell much like your own. The resident here has met an unfortunate fate a long time ago.`,
-    default: 'There is a stone wall here',
-    south: '--prisonhallway',
-    objects: ['--armbone']
-  },
-  {
-    name: 'Guarded Hallway',
-    code: '--guardedhallway',
-    des: `A hallway lined with cells.
-    A guard blocks your way east`,
-    north: 'Locked cells block your way',
-    south: 'Locked cells block your way',
-    east: '--pillarroom',
-    objects: [],
-    enemies: ['--westhallwayguard']
-  },
-  {
-    name: 'Pillar Room',
-    code: '--pillarroom',
-    des: `A room with a stone obelisk in the center. The obelisk has a slot at the top.`,
-    north: '--hallway',
-    east: 'A stone wall with an outline of a door.',
-    south: 'The south corridor is blocked by web.',
-    west: '--guardedhallway',
-    objects: []
-  },
-  {
-    name: 'Prison Hallway',
-    code: '--hallway',
-    des: ``,
-    default: 'There is a wall here.',
-    east: '--studyroom',
-    south: '--pillarroom',
-    objects: []
-  },
-  {
-    name: 'Study Room',
-    code: '--studyroom',
-    des: `An old study room. The walls are lined with bookshelves.`,
-    default: 'There is a bookshelf here.',
-    west: '--hallway',
-    objects: ['--stickcandle', '--oldbook']
-  },
-  {
-    name: 'Empty Room',
-    code: '--darkroom',
-    des: `There is a plaque on the wall that reads:
-    'Darkness will light the way'.`,
-    secDes: `A passage has revealed southwards`,
-    default: 'There is a wall.',
-    north: '--pillarroom',
-    objects: []
-  },
-  {
-    name: 'Prayer room',
-    code: '--prayerroom',
-    des: `A holy room with an alter. Behind the alter there is a sword mounted on the wall.`,
-    default: 'There is a wall here.',
-    north: '--darkroom',
-    objects: [],
-
-  },
-  {
-    name: 'Cave',
-    code: '--cave1',
-    des: 'A labrynthine cave system. There is a passage back to the prison to the west.',
-    default: '--cave1',
-    west: '--pillarroom',
-    south: '--cave2',
-    objects: []
-  },
-  {
-    name: 'Cave',
-    code: '--cave2',
-    des: 'A labrynthine cave system.',
-    default: '--cave2',
-    north: '--cave3',
-    east: '--cave1',
-    objects: []
-  },
-  {
-    name: 'Cave',
-    code: '--cave3',
-    des: 'A labrynthine cave system. There is a chasm to the east',
-    default: '--cave3',
-    south: '--cave2',
-    east: '--chasm',
-    objects: []
-  },
-  {
-    name: 'Chasm',
-    code: '--chasm',
-    des: `A large endless chasm stretches from north to south. There is a drawbridge and a lever on the other side.`,
-    north: 'A bottomless chasm',
-    east: '--freedomstairs',
-    south: 'A bottomless chasm',
-    west: '--cave3',
-    objects: []
-  },
-  {
-    name: 'Staircase',
-    code: '--freedomstairs',
-    des: 'A long staircase. There is a bright light to the east.',
-    default: 'There is a wall here',
-    east: '--victory',
-    west: '--chasm',
-    objects: []
-  }
-]
-
-exampleObject = {
-  noun: 'note',
-  adjectives: 'scrappy',
-  code: '--scrappynote',
-  isTakeable: true, // take, grab, drop, put, place
-  isWeapon: true, // can be used to attack. isTakeable needs to also be true for this to work.
-  attackDamage: (30, 30) // min and max values of attack, only needs to be here if isWeapon is true
-}
-
-/** Used to initialize the objects, do not edit directly */
-const objectListBlueprint = [
-  {
-    noun: 'note',
-    adjectives: 'scrappy',
-    des: 'A scrappy looking piece of paper, scribbled on in a hurry.',
-    code: '--scrappynote',
-    isTakeable: true, // take, grab, drop, put, place
-    isWeapon: false,
-    isAttackable: false
-  },
-  {
-    noun: 'bone',
-    adjectives: 'arm',
-    code: '--armbone',
-    des: 'The arm bone of a long dead prisoner. Looks like it would hurt to get hit with it.',
-    isTakeable: true,
-    isWeapon: true,
-    isAttackable: false,
-    attackDamage: (15, 30)
-  },
-  {
-    noun: 'candle',
-    adjectives: 'stick',
-    code: '--stickcandle',
-    des: 'A lit candle stick',
-    isTakeable: true,
-    isWeapon: false,
-    isAttackable: false
-  },
-  {
-    noun: 'book',
-    adjectives: 'old',
-    code: '--oldbook',
-    des: 'An old book with ornate golden lettering.',
-    isTakeable: true,
-    isWeapon: false,
-    isAttackable: false,
-    text: `Placeholder text`
-  },
-  {
-    noun: 'sword',
-    adjectives: 'holy',
-    code: '--holysword',
-    des: 'A holy sword used in a long and bloody crusade.',
-    isTakeable: true,
-    isWeapon: true,
-    attackDamage: (30, 50)
-  }
-]
-
-enemyListBlueprint = [
-  {
-    name: 'prison guard',
-    code: '--westhallwayguard',
-    hp: 100,
-    attackDamge: (15, 25)
-  }
-]
+// enemyListBlueprint = [
+//   {
+//     name: 'prison guard',
+//     code: '--westhallwayguard',
+//     hp: 100,
+//     attackDamge: (15, 25)
+//   }
+// ]
 
 const startingRoom = '--prisoncell'
 
@@ -543,7 +335,7 @@ let currentRoom
 let inventory
 let roomLookup
 let objectLookup
-let objectList
+let itemList
 let roomMap
 let gameState
 
@@ -559,8 +351,8 @@ function copyData(data) {
 function setupGame() {
   currentRoom = startingRoom
   inventory = []
-  roomMap = copyData(roomMapBlueprint)
-  objectList = copyData(objectListBlueprint)
+  roomMap = copyData(roomsJSON)[0] // zero because array is wrapped in top level json object
+  itemList = copyData(itemsJSON)[0]
   gameState = copyData(gameStateSettings)
   roomLookup = hashRooms()
   objectLookup = hashObjects()
@@ -584,7 +376,7 @@ function hashRooms() {
 function hashObjects() {
   objects = {}
 
-  for (let object of objectList) {
+  for (let object of itemList) {
     objects[object.code] = object
   }
 

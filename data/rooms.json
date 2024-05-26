@@ -1,0 +1,138 @@
+[
+    [
+        {
+            "name": "Prison Cell",
+            "code": "--prisoncell",
+            "des": "The cell you have been imprisoned to. The room is small, damp and poorly lit.",
+            "default": "There is a stone wall here",
+            "north": "--prisonhallway",
+            "objects": [
+                "--scrappynote"
+            ]
+        },
+        {
+            "name": "Prison Hallway",
+            "code": "--prisonhallway",
+            "des": "A dead end hallway with two cells facing each other at the end.",
+            "default": "There is a stone wall here",
+            "south": "--prisoncell",
+            "north": "--deadmanscell",
+            "east": "--guardedhallway",
+            "objects": []
+        },
+        {
+            "name": "Dead Man's cell",
+            "code": "--deadmanscell",
+            "des": "A cell much like your own. The resident here has met an unfortunate fate a long time ago.",
+            "default": "There is a stone wall here",
+            "south": "--prisonhallway",
+            "objects": [
+                "--armbone"
+            ]
+        },
+        {
+            "name": "Guarded Hallway",
+            "code": "--guardedhallway",
+            "des": "A hallway lined with cells.",
+            "north": "Locked cells block your way",
+            "south": "Locked cells block your way",
+            "east": "--pillarroom",
+            "objects": [],
+            "enemies": [
+                "--westhallwayguard"
+            ]
+        },
+        {
+            "name": "Pillar Room",
+            "code": "--pillarroom",
+            "des": "A room with a stone obelisk in the center. The obelisk has a slot at the top.",
+            "north": "--hallway",
+            "east": "A stone wall with an outline of a door.",
+            "south": "The south corridor is blocked by web.",
+            "west": "--guardedhallway",
+            "objects": []
+        },
+        {
+            "name": "Prison Hallway",
+            "code": "--hallway",
+            "des": "",
+            "default": "There is a wall here.",
+            "east": "--studyroom",
+            "south": "--pillarroom",
+            "objects": []
+        },
+        {
+            "name": "Study Room",
+            "code": "--studyroom",
+            "des": "An old study room. The walls are lined with bookshelves.",
+            "default": "There is a bookshelf here.",
+            "west": "--hallway",
+            "objects": [
+                "--stickcandle', '--oldbook"
+            ]
+        },
+        {
+            "name": "Empty Room",
+            "code": "--darkroom",
+            "des": "There is a plaque on the wall that reads \"Darkness will light the way\".",
+            "secDes": "A passage has revealed southwards",
+            "default": "There is a wall.",
+            "north": "--pillarroom",
+            "objects": []
+        },
+        {
+            "name": "Prayer room",
+            "code": "--prayerroom",
+            "des": "A holy room with an alter. Behind the alter there is a sword mounted on the wall.",
+            "default": "There is a wall here.",
+            "north": "--darkroom",
+            "objects": []
+        },
+        {
+            "name": "Cave",
+            "code": "--cave1",
+            "des": "A labrynthine cave system. There is a passage back to the prison to the west.",
+            "default": "--cave1",
+            "west": "--pillarroom",
+            "south": "--cave2",
+            "objects": []
+        },
+        {
+            "name": "Cave",
+            "code": "--cave2",
+            "des": "A labrynthine cave system.",
+            "default": "--cave2",
+            "north": "--cave3",
+            "east": "--cave1",
+            "objects": []
+        },
+        {
+            "name": "Cave",
+            "code": "--cave3",
+            "des": "A labrynthine cave system. There is a chasm to the east",
+            "default": "--cave3",
+            "south": "--cave2",
+            "east": "--chasm",
+            "objects": []
+        },
+        {
+            "name": "Chasm",
+            "code": "--chasm",
+            "des": "A large endless chasm stretches from north to south. There is a drawbridge and a lever on the other side.",
+            "north": "A bottomless chasm",
+            "east": "--freedomstairs",
+            "south": "A bottomless chasm",
+            "west": "--cave3",
+            "objects": []
+        },
+        {
+            "name": "Staircase",
+            "code": "--freedomstairs",
+            "des": "A long staircase. There is a bright light to the east.",
+            "default": "There is a wall here",
+            "east": "--victory",
+            "west": "--chasm",
+            "objects": []
+        }
+    ]
+]

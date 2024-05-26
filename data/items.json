@@ -1,0 +1,56 @@
+[
+    [
+        {
+            "noun": "note",
+            "adjectives": "scrappy",
+            "des": "A scrappy looking piece of paper, scribbled on in a hurry.",
+            "code": "--scrappynote",
+            "isTakeable": true,
+            "isWeapon": false,
+            "isAttackable": false
+        },
+        {
+            "noun": "bone",
+            "adjectives": "arm",
+            "code": "--armbone",
+            "des": "The arm bone of a long dead prisoner. Looks like it would hurt to get hit with it.",
+            "isTakeable": true,
+            "isWeapon": true,
+            "isAttackable": false,
+            "attackDamage": [
+                15,
+                30
+            ]
+        },
+        {
+            "noun": "candle",
+            "adjectives": "stick",
+            "code": "--stickcandle",
+            "des": "A lit candle stick",
+            "isTakeable": true,
+            "isWeapon": false,
+            "isAttackable": false
+        },
+        {
+            "noun": "book",
+            "adjectives": "old",
+            "code": "--oldbook",
+            "des": "An old book with ornate golden lettering.",
+            "isTakeable": true,
+            "isWeapon": false,
+            "isAttackable": false
+        },
+        {
+            "noun": "sword",
+            "adjectives": "holy",
+            "code": "--holysword",
+            "des": "A holy sword used in a long and bloody crusade.",
+            "isTakeable": true,
+            "isWeapon": true,
+            "attackDamage": [
+                30,
+                50
+            ]
+        }
+    ]
+]
