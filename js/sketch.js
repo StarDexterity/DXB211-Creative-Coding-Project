@@ -1,38 +1,49 @@
+/** Load game assets from file */
 function preload() {
   pixelFont = loadFont('fonts/Pixelon-E4JEg.otf')
   itemsJSON = loadJSON('data/items.json')
   roomsJSON = loadJSON('data/rooms.json')
 }
 
-// Text data
+// loaded JSON, copied to load gamedata, kept in original state for repeat reloads
 let itemsJSON
 let roomsJSON
+
+// Text data
 let inputBuffer = ''
 let lineHistory = []
 
 // Textbox graphics buffer
 let tb
 
-
+/**
+ * 
+ * @param {string} text Gets number of lines of this string
+ * @param {number} maxWidth Max width of a line
+ * @returns Number of lines of the text (can sometimes be wrong :/ needs investigation)
+ */
 function calculateLines(text, maxWidth) {
   const words = text.split(' ')
   let lines = 1
   let currentLine = ''
 
 
+  // for each word in the string
   for (let word of words) {
     if (word.length === 0) {
       continue
     }
 
     let testLine = ''
+
+    // if its not the first word in the current line, prepend a space
     if (currentLine.length > 0) {
       testLine = currentLine + ' ' + word
     } else {
       testLine = word
     }
 
-    // test line if it is too long, start a new line
+    // test line width, if it is too long, start a new line
     if (tb.textWidth(testLine) > maxWidth) {
       currentLine = word
       lines += 1
@@ -48,11 +59,15 @@ function calculateLines(text, maxWidth) {
     }
   }
 
-  // debug
-  // console.log(lines)
   return lines
 }
 
+/**
+ * 
+ * @param {Array[string]} lines Array of line strings in the console.
+ * @param {number} maxWidth Max width of a line
+ * @returns Height in pixels of the textbox needed to store the lines. Considers text settings, such as font size.
+ */
 function calculateTextboxHeight(lines, maxWidth) {
   if (lines.length === 0) {
     return 0
@@ -67,7 +82,7 @@ function calculateTextboxHeight(lines, maxWidth) {
 }
 
 
-// textbox element
+// textbox config object
 let textbox = {
   x: 10, // x offset of textbox in main canvas
   y: 10, // y offset of textbox in main canvas
@@ -88,9 +103,13 @@ let textbox = {
     backbarFill: '#356D7D' // colour of backbar
   }
 }
+// max width of a line is the textbox width take the sidebar width take 5
 textbox.maxTextWidth = textbox.width - textbox.sb.width - 5
 
 
+/**
+ * Draws main console text display of the output. Text is drawn to a buffer first, so overflow can be hidden.
+ */
 function drawTextDisplay() {
   // clear buffer
   tb.background(0)
@@ -106,16 +125,8 @@ function drawTextDisplay() {
   const totalTextHeight = calculateTextboxHeight(lineHistory, textbox.maxTextWidth)
   const shownPortion = min(1, tb.height / totalTextHeight)
 
-  // debug
-  // console.log(lineHeight)
-  // console.log(lineCount)
-  // console.log(totalTextHeight)
-  // console.log(shownPortion)
-
-
   // set offset (scrollbar percent scaled to height of total text)
   const scrollOffset = (textbox.sb.y / textbox.height) * totalTextHeight
-
 
   // scroll offset, draw text
   tb.push()
@@ -125,7 +136,7 @@ function drawTextDisplay() {
   tb.fill(255)
   tb.strokeWeight(1)
 
-  // draw lines
+  // draw text lines
   let y = 0
   for (let i = 0; i < lineHistory.length; i++) {
     currentLine = lineHistory[i]
@@ -135,14 +146,15 @@ function drawTextDisplay() {
     y += calculateLines(currentLine, textbox.maxTextWidth)
   }
 
-
+  // reset translation
   tb.pop()
 
   // draw scroll bar
 
-  // scrollbar height is the shown portion of text multiplied by the texbox height
+  // calculate scrollbar height = seen portion of text multiplied by the texbox height
   textbox.sb.height = shownPortion * tb.height
 
+  // draw backbar (dunno what the official term is)
   tb.fill(textbox.sb.backbarFill)
   tb.rect(textbox.width - textbox.sb.width,
     0,
@@ -150,15 +162,23 @@ function drawTextDisplay() {
     textbox.height
   )
 
+  // draw scroll handle
   tb.noStroke()
   tb.fill(textbox.sb.fill)
-  tb.rect(textbox.width - textbox.sb.width, textbox.sb.y, textbox.sb.width, textbox.sb.height)
+  tb.rect(textbox.width - textbox.sb.width, 
+    textbox.sb.y, 
+    textbox.sb.width, 
+    textbox.sb.height)
 
 
   // finally draw textbox viewable portion to screen
   image(tb, textbox.x, textbox.y, textbox.width, textbox.height)
 }
 
+/**
+ * Setup function for p5js
+ * Create canvas, setup game state, and create main text display buffer
+ */
 function setup() {
   createCanvas(400, 500);
   setupGame()
@@ -167,6 +187,9 @@ function setup() {
   tb = createGraphics(textbox.width, textbox.height)
 }
 
+/**
+ * p5js Main draw function
+ */
 function draw() {
   background(0);
 
@@ -277,7 +300,7 @@ function mouseReleased() {
 
 
 /////////////////////////////////////////////////////////////|
-////////////////// Logic section ////////////////////////////|
+////////////////////// Game section /////////////////////////|
 /////////////////////////////////////////////////////////////|
 
 
@@ -311,7 +334,8 @@ function helpCommand() {
 }
 
 
-const gameStateSettings = {
+/** Clean copy of the game state variables */
+const gameStateOriginal = {
   prayed: false,
   holySwordTaken: false,
   holySwordPlaced: false,
@@ -343,7 +367,8 @@ let itemList
 let roomMap
 let gameState
 
-const debugMode = true
+// for the teleport command
+const debugMode = false
 
 
 /** Deep copy a nested data structure */
@@ -357,7 +382,7 @@ function setupGame() {
   inventory = []
   roomMap = copyData(roomsJSON)[0] // zero because array is wrapped in top level json object
   itemList = copyData(itemsJSON)[0]
-  gameState = copyData(gameStateSettings)
+  gameState = copyData(gameStateOriginal)
   roomLookup = hashRooms()
   itemLookup = hashObjects()
   lineHistory = []
@@ -799,7 +824,7 @@ function prayerRoomPuzzle(action, objectStr) {
     }
 
     if (!gameState.prayed) {
-      return 'You attempt to pry the sword off the wall but it will not budge.'
+      return 'You attempt to pry the holy sword off the wall but it will not budge.'
     }
 
     if (inventory.length > 1) {

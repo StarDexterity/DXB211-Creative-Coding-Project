@@ -94,7 +94,7 @@
         {
             "name": "Prayer room",
             "code": "--prayerroom",
-            "des": "A holy room with an alter. Behind the alter there is a sword mounted on the wall.",
+            "des": "A holy room with an alter. Behind the alter there is a decorative ceremonial sword mounted on the wall.",
             "default": "There is a wall here.",
             "north": "--darkroom",
             "objects": []
