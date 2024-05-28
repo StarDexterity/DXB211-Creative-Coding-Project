@@ -284,9 +284,11 @@ function mouseReleased() {
 
 
 function infoCommand() {
-  return `You wake up in a dark dank cell in an underground dungeon accused of a crime you didn't commit. The road ahead will be treacherous, but you must achieve your freedom at any cost.
+  return `Welcome to Dungeon Escape!
   
-  To escape you must traverse the dungeon, solve puzzles, and slay monsters. The dungeon is divided into rooms which can be navigated with compass commands. You will find useful and useless items. There are enemies which will try to kill you. You can attack them and will do so with whatever you have equiped. You can hold ${maxInventorySlots} items in your inventory.
+  You wake up in a dark dank cell in an underground dungeon accused of a crime you didn't commit. The road ahead will be treacherous, but you must achieve your freedom at any cost.
+  
+  To escape you must traverse the dungeon and solve puzzles. The dungeon is divided into rooms which can be navigated with compass commands. You will find useful and useless items. You can hold ${maxInventorySlots} items in your inventory.
 
   Type HELP for more info.
   `
